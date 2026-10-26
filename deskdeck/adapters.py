@@ -71,8 +71,8 @@ _PORTS = frozenset({
     "USB-C2", "Thunderbolt", "VGA",
 })
 _PBP3_REASON = (
-    "Complete PBP3 restore is unsupported: the exact U5226KW layout mapping, "
-    "all three ordered region input assignments, and semantic state readback "
+    "Complete PBP3 restore is unsupported: all three ordered region input assignments "
+    "and semantic state readback "
     "have not been verified. No monitor commands were executed."
 )
 _FULLSCREEN_REASON = (
@@ -268,7 +268,7 @@ class DDPMAdapter(HardwareAdapter):
         desired = profile["monitor"]
         mode = desired.get("mode")
         if mode == "pbp3":
-            # No partial fallback and no speculative letter-to-geometry mapping.
+            # Documented geometry alone does not qualify complete state restoration.
             raise UnsupportedFeature(_PBP3_REASON)
         if mode != "fullscreen":
             raise UnsupportedFeature("Only fullscreen previews and documented reads are available.")

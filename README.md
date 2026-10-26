@@ -68,8 +68,8 @@ An installable entry point is also available with `python -m pip install .`.
 
 ## What comes next
 
-1. Verify the exact U5226KW PBP layout-to-command mapping, all three source
-   assignments, and full-state readback on real hardware.
+1. Qualify the documented U5226KW `pbp-3a` geometry on real hardware, establish
+   all three ordered source assignments, and verify full-state readback.
 2. Calibrate the physical display geometry and a safe owned Deskflow reload path.
 3. Connect the two adapters with verified state transitions and recovery.
 4. Add authenticated remote clients so the same panel can be used from any

@@ -68,7 +68,7 @@ class AdapterTests(unittest.TestCase):
         with self.assertRaises(BindingError):
             DDPMAdapter().prepare(FULLSCREEN, data)
 
-    def test_complete_three_input_restore_cannot_skip_missing_mapping(self):
+    def test_complete_three_input_restore_cannot_skip_missing_assignments(self):
         data = binding()
         del data["inputs"]["linux"]
         with patch("deskdeck.adapters.subprocess.Popen") as popen:

@@ -31,17 +31,35 @@ include index, service tag, and model; Dell warns against combining selectors.
 Responses show JSON with a `Result` field. The device-data example includes an
 active input but does not establish complete PBP layout/region state.
 
-The [Windows 2.3.0 administration PDF](https://dl.dell.com/content/manual4985061-dell-display-and-peripheral-manager-for-windows-version-2-3-0-administration-guide.pdf?language=en-us)
-was linked by Dell, but retrieval failed with a timeout during this research.
-Its exact syntax and feature coverage remain unverified. No Windows command is
-implemented. Older DDM/`WritePxP` examples are not a substitute for this contract.
+The [Windows 2.3.0 administration guide](https://dl.dell.com/content/manual4985061-dell-display-and-peripheral-manager-for-windows-version-2-3-0-administration-guide.pdf?language=en-us)
+was retrieved and inspected after an initial download timeout. Printed page 10
+locates its CLI at
+`C:\Program Files\Dell\Dell Display and Peripheral Manager\Plugins\Subagent\cli.subagent.exe`.
+Table 175 on page 77 maps `pbp-3a` to a large left region and stacked right regions.
+The [U5226KW user guide](https://dl.dell.com/content/manual32544295-dell-ultrasharp-52-thunderbolt-hub-monitor-u5226kw-u5226kw-wost-user-s-guide.pdf?language=en-us),
+page 58, Configuration 11 identifies left as Win1, upper right as Win2, and lower
+right as Win3. This establishes the documented geometry for Shared; it does not
+establish how three CLI input arguments bind to those windows.
+
+The Windows guide's Table 173 on page 76 prints a two-input example with duplicated
+`-value` flags. DeskDeck does not silently correct that example or turn it into a
+write command. No Windows command is implemented. Older DDM/`WritePxP` examples
+are not a substitute for a current verified contract.
+
+Both guides document ExportSettings/ImportSettings (Mac pages 83–84; Windows
+pages 111–112), but neither supplies an exported schema or expressly guarantees
+complete PxP mode and region coverage. Their DeviceData examples contain an active
+input, not a complete three-region state. Export/import therefore remains a
+possible qualification route, not an implemented or verified restore mechanism.
 
 ## The current blockers
 
-The current implementation deliberately does not translate the logical
-`left-large-right-stack` layout into a Dell mode letter. It has no verified
-contract for all three ordered input assignments, or readback of every region
-and the layout. A two-input example does not establish three-input support.
+The documented `left-large-right-stack` geometry corresponds to `pbp-3a`. The
+current implementation still has no verified contract for all three ordered input
+assignments, or readback of every region and the layout. Neither guide provides
+an explicit complete three-source example or PxP readback command. This is a
+documentation gap, not evidence that the hardware cannot support restoration.
+A two-input example does not establish three-input support.
 It also has no documented, verified readback that proves PxP is off after a
 fullscreen request. Active-input readback alone is insufficient.
 
