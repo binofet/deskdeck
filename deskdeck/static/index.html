@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <meta name="theme-color" content="#191c1c">
+    <title>DeskDeck · Your desk, together</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="/static/app.js" defer></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="app-header">
+        <a class="brand" href="/" aria-label="DeskDeck home">
+          <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span>DeskDeck<span class="brand-period">.</span></span>
+        </a>
+        <div class="header-meta">
+          <span class="local-label"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="4" y="8" width="12" height="9" rx="2"/><path d="M7 8V5a3 3 0 0 1 6 0v3"/></svg> Local to your desk</span>
+          <span class="mode-badge" id="mode-badge"><span></span><span id="mode-label">Connecting</span></span>
+        </div>
+      </header>
+
+      <main>
+        <div class="page-heading">
+          <div><p class="eyebrow">A PLACE FOR EVERYTHING</p><h1>Your desk. Your way.</h1><p class="page-description">One profile for your display, computers, and pointer.</p></div>
+          <div class="profile-count" aria-label="Five complete desk profiles"><strong>05</strong><span>complete<br>desk profiles</span></div>
+        </div>
+
+        <div class="workspace">
+          <aside class="profile-sidebar" aria-label="Desk profiles">
+            <div class="section-heading"><h2>Choose a profile</h2><span class="tiny-label">01 — 05</span></div>
+            <fieldset class="profile-list" id="profile-list"><legend class="visually-hidden">Desk profile</legend></fieldset>
+            <div class="sidebar-note"><span aria-hidden="true">↔</span><p>Switch the whole desk.<br><strong>Keep your place.</strong></p></div>
+          </aside>
+
+          <section class="desk-panel" aria-labelledby="preview-title">
+            <div class="preview-heading">
+              <div><p class="eyebrow">DESK PREVIEW</p><h2 id="preview-title">Shared desk</h2></div>
+              <span class="layout-badge" id="layout-badge">Three views. One display.</span>
+            </div>
+
+            <div class="desk-visual" role="img" id="desk-visual" aria-label="Shared desk: Main laptop at far left. Dell display has Main on the left, Linux at upper right, and Mac at lower right. Windows laptop at far right.">
+              <div class="screen-caption"><span class="caption-line"></span><span>DELL U5226KW <b>52″ · 6K</b></span><span class="caption-line"></span></div>
+              <div class="physical-desk">
+                <div class="laptop laptop-main">
+                  <div class="laptop-lid"><div class="laptop-screen device-main"><span class="device-glyph" data-glyph="main"></span><span>Main</span><span class="screen-shine"></span></div></div>
+                  <div class="laptop-base"></div>
+                  <div class="laptop-caption"><span class="device-dot main-dot"></span><span>Main laptop<small>Far left · always here</small></span></div>
+                </div>
+                <div class="dell-monitor">
+                  <div class="monitor-bezel"><div class="monitor-screen shared-layout" id="monitor-screen"></div><div class="monitor-power"></div></div>
+                  <div class="monitor-neck"></div><div class="monitor-foot"></div>
+                </div>
+                <div class="laptop laptop-windows">
+                  <div class="laptop-lid"><div class="laptop-screen device-windows"><span class="device-glyph" data-glyph="windows"></span><span>Windows</span><span class="screen-shine"></span></div></div>
+                  <div class="laptop-base"></div>
+                  <div class="laptop-caption"><span class="device-dot windows-dot"></span><span>Windows laptop<small>Far right · always here</small></span></div>
+                </div>
+              </div>
+              <div class="desk-line"></div>
+              <div class="pointer-route" aria-hidden="true"><span></span><svg viewBox="0 0 16 18" fill="none"><path d="m3 2 9 8-5 .5L5 15 3 2Z"/></svg><span>One pointer, across your desk</span><span></span></div>
+            </div>
+
+            <div class="layout-details">
+              <div class="detail-block"><span class="detail-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4M12 4v13m0-6h9"/></svg></span><div><h3>Dell display</h3><p id="display-description">Main left · Linux upper right · Mac lower right</p></div></div>
+              <div class="detail-block"><span class="detail-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="m5 4 12 10-6 1-2 6L5 4Z"/><path d="M17 4h4m-2-2v4"/></svg></span><div><h3>Deskflow layout</h3><p id="pointer-description">Main laptop left · Windows laptop right</p></div></div>
+            </div>
+
+            <div class="action-area">
+              <div class="selection-note"><span class="selected-dot" aria-hidden="true"></span><p><strong id="selection-name">Shared desk</strong><span>Selected for review</span></p></div>
+              <div class="action-buttons"><button type="button" class="button button-secondary" id="review-button" disabled>Review profile <span aria-hidden="true">↗</span></button><button type="button" class="button button-primary" id="apply-button" disabled>Apply profile <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10h12m-5-5 5 5-5 5"/></svg></button></div>
+            </div>
+            <p class="apply-hint" id="apply-hint">Connecting to the local DeskDeck service…</p>
+          </section>
+        </div>
+
+        <section class="connection-strip" aria-labelledby="connection-title">
+          <div class="connection-summary"><span class="connection-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M8 3v5m8-5v5M6 8h12v3a6 6 0 0 1-12 0V8Zm6 9v4"/></svg></span><div><h2 id="connection-title">Connecting to your desk</h2><p id="connection-message">Checking display controls and Deskflow.</p></div></div>
+          <div class="connection-indicators"><span class="connection-indicator" id="hardware-indicator"><i></i><span>Display controls</span></span><span class="connection-indicator" id="deskflow-indicator"><i></i><span>Deskflow</span></span><button type="button" class="retry-button" id="retry-button" hidden>Retry connection <span aria-hidden="true">↻</span></button></div>
+        </section>
+
+        <section class="plan-panel" id="plan-panel" aria-labelledby="plan-title" hidden>
+          <div class="plan-heading"><div><p class="eyebrow">BEFORE YOU SWITCH</p><h2 id="plan-title">Profile plan</h2></div><span class="plan-status" id="plan-status">Preview only</span></div>
+          <p class="plan-intro" id="plan-intro"></p>
+          <ol class="plan-steps" id="plan-steps"></ol>
+          <div class="plan-blockers" id="plan-blockers" hidden><h3>To connect this desk</h3><ul id="blocker-list"></ul></div>
+          <p class="restore-note"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 7a6 6 0 1 1 0 6M4 3v4h4"/></svg><span>Shared desk restores its complete display and Deskflow layout together.</span></p>
+        </section>
+
+        <div class="feedback" id="feedback" role="status" aria-live="polite" hidden></div>
+        <noscript><p class="noscript-notice">Enable JavaScript to preview profiles and connect to the local DeskDeck service.</p></noscript>
+      </main>
+
+      <footer class="app-footer"><span>DESKDECK <span class="footer-slash">/</span> MADE FOR YOUR DESK</span><span id="current-profile">No profile applied in this session</span></footer>
+    </div>
+  </body>
+</html>
