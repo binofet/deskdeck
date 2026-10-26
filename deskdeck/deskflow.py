@@ -136,6 +136,7 @@ class DeviceBinding:
         except ValueError as error:
             raise ConfigurationError("A literal unicast LAN address is required") from error
         if (address.is_unspecified or address.is_multicast or address.is_loopback or address.is_reserved
+                or (address.version == 6 and address.is_link_local)
                 or getattr(address, "scope_id", None) is not None
                 or getattr(address, "ipv4_mapped", None) is not None):
             raise ConfigurationError("Unsupported LAN address")

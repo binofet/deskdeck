@@ -105,6 +105,15 @@ class DeskflowPreparationTests(unittest.TestCase):
         with self.assertRaises(ConfigurationError):
             prepare_profile("shared", items)
 
+    def test_ipv6_link_local_requires_a_scope_this_binding_contract_does_not_support(self):
+        item = bindings()[0]
+        for address in ("fe80::1", "fe90::2", "febf::3", "fe80::1%en0"):
+            with self.subTest(address=address):
+                with self.assertRaises(ConfigurationError):
+                    replace(item, lan_address=address)
+        self.assertEqual(replace(item, lan_address="fd00::1").lan_address, "fd00::1")
+        self.assertEqual(replace(item, lan_address="169.254.1.2").lan_address, "169.254.1.2")
+
     def test_names_addresses_and_paths_reject_injection_or_ambiguous_binding(self):
         item = bindings()[0]
         cases = [
