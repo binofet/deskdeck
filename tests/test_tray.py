@@ -88,7 +88,7 @@ class TrayTests(unittest.TestCase):
                 redirect_stdout(io.StringIO()):
             run_tray(0)
         server_type.assert_called_once_with(("127.0.0.1", 0), setup=None)
-        opened.assert_called_once_with("http://127.0.0.1:43210/")
+        opened.assert_not_called()
         backend.Icon.return_value.run.assert_called_once_with()
         server.shutdown.assert_called_once_with()
         server.server_close.assert_called_once_with()
@@ -143,6 +143,14 @@ class TrayTests(unittest.TestCase):
                 redirect_stderr(io.StringIO()) as output:
             self.assertEqual(main([]), 1)
         self.assertIn("fixture missing extra", output.getvalue())
+
+    def test_startup_never_opens_browser_unless_explicitly_requested(self):
+        with patch("deskdeck.tray.run_tray") as run:
+            self.assertEqual(main([]), 0)
+            run.assert_called_once_with(8765, setup=None, open_browser=False)
+        with patch("deskdeck.tray.run_tray") as run:
+            self.assertEqual(main(["--open"]), 0)
+            run.assert_called_once_with(8765, setup=None, open_browser=True)
 
 
 if __name__ == "__main__":

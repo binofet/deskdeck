@@ -70,10 +70,15 @@ deskdeck-tray --setup .local/desk.json
 
 The menu offers **Open DeskDeck**, six **Preview** profiles, and **Quit DeskDeck**.
 Selecting a preview does not apply it. Quit closes the launcher's own local
-server. `--no-open` starts just the tray; `--port 0` selects a free local port.
+server. Startup is quiet by default: no browser opens and no focus is requested.
+`--open` explicitly opens the panel; `--no-open` is retained as an alias for the
+default. `--port 0` selects a free local port.
 No automatic startup is registered. Linux requires a menu-capable
 AppIndicator/Ayatana or GTK backend; GNOME may require an indicator extension.
 Native platform acceptance is separate from the mocked menu/lifecycle tests.
+For a dedicated per-user installation with an ownership manifest and matching
+uninstall scripts, follow [Install and uninstall](docs/INSTALL.md). The source
+checkout stays at `~/dev/deskdeck`; installation never enables automatic startup.
 
 To include planned wiring in the panel, copy `examples/desk-setup.json` to an
 ignored `.local/desk.json`, adjust the ports, and run:
@@ -99,6 +104,10 @@ explicitly passed; invalid, duplicate or unknown assignments are rejected.
 - Draft Deskflow computer-edge configurations, with screen-name validation.
 - Optional local planned-wiring files, with a port legend and per-region plans.
 - An optional tray/menu-bar launcher with fixed local profile-preview links.
+- A [catalog of all documented native layouts](docs/NATIVE-LAYOUTS.md), with
+  geometry kept separate from hardware control codes and compatibility.
+- A [measured panel-edge route planner](docs/EDGE-ROUTES.md), which refuses
+  unrepresentable or unknown display boundaries before producing a draft.
 - Pure Deskflow 1.27 role preparation and ordered operator acknowledgements;
   this does not start a server or establish trusted peer connections.
 - An isolated Dell CLI adapter with explicit execution/write gates, documented

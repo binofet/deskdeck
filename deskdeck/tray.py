@@ -117,7 +117,7 @@ def _load_backend():
     return pystray, Image
 
 
-def run_tray(port: int = 8765, setup=None, *, open_browser: bool = True):
+def run_tray(port: int = 8765, setup=None, *, open_browser: bool = False):
     """Own one loopback preview server for this explicitly launched tray process.
 
     Does not attach to an existing server, install a service, watch other apps,
@@ -163,7 +163,12 @@ def main(argv=None):
     parser.add_argument("--port", type=int, default=8765,
                         help="Loopback preview port (default: 8765; 0 chooses an available port)")
     parser.add_argument("--setup", metavar="FILE", help="Explicit local planned-wiring JSON")
-    parser.add_argument("--no-open", action="store_true", help="Wait for Open DeskDeck instead of opening a browser at launch")
+    opening = parser.add_mutually_exclusive_group()
+    opening.add_argument("--open", action="store_true", dest="open_browser",
+                         help="Explicitly open the browser at launch (default: tray only)")
+    opening.add_argument("--no-open", action="store_false", dest="open_browser",
+                         help="Start only the tray (the default)")
+    parser.set_defaults(open_browser=False)
     args = parser.parse_args(argv)
     if not 0 <= args.port <= 65535:
         parser.error("Port must be between 0 and 65535")
@@ -175,7 +180,7 @@ def main(argv=None):
         except ValueError as error:
             parser.error(str(error))
     try:
-        run_tray(args.port, setup=setup, open_browser=not args.no_open)
+        run_tray(args.port, setup=setup, open_browser=args.open_browser)
     except (TrayUnavailable, OSError) as error:
         print(f"DeskDeck tray: {error}", file=sys.stderr)
         return 1
