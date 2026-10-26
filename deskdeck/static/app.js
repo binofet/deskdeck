@@ -11,10 +11,12 @@
   const fallbackProfiles = [
     { id: "shared", name: "Shared desk", description: "Main, Linux & Mac together", mode: "shared", focus: null, regions: [{ device: "main", position: "left" }, { device: "linux", position: "upper-right" }, { device: "mac", position: "lower-right" }], left: "main", right: "windows" },
     ...["main", "mac", "linux", "windows"].map(device => ({ id: `focus-${device}`, name: `${devices[device].name} focus`, description: `${devices[device].label} on the full display`, mode: "focus", focus: device, regions: [{ device, position: "fullscreen" }], left: "main", right: "windows" })),
+    { id: "shared-four", name: "Four-way desk", description: "All four computers, in a 2 × 2 grid", mode: "grid", focus: null, regions: [{ device: "mac", position: "top_left" }, { device: "linux", position: "top_right" }, { device: "main", position: "bottom_left" }, { device: "windows", position: "bottom_right" }], left: "main", right: "windows" },
   ];
 
   const glyphPaths = {
     shared: '<rect x="2" y="3" width="16" height="14" rx="2"/><path d="M10 3v14m0-7h8"/>',
+    grid: '<rect x="2" y="3" width="16" height="14" rx="2"/><path d="M10 3v14M2 10h16"/>',
     main: '<rect x="3" y="3" width="14" height="10" rx="1.5"/><path d="M1 16h18M7 13l-1 3m7-3 1 3"/>',
     mac: '<path d="M7 7V4.5a2.5 2.5 0 1 0-2.5 2.5h11A2.5 2.5 0 1 0 13 4.5v11a2.5 2.5 0 1 0 2.5-2.5h-11A2.5 2.5 0 1 0 7 15.5V7Z"/>',
     linux: '<rect x="2" y="3" width="16" height="14" rx="2"/><path d="m5 7 3 3-3 3m6 0h4"/>',
@@ -23,7 +25,7 @@
 
   const $ = id => document.getElementById(id);
   const state = { profiles: fallbackProfiles, selectedId: "shared", setup: null, status: null, token: null, backendReady: false, loading: true, reviewing: false, applying: false, plan: null };
-  const elements = Object.fromEntries(["profile-list", "preview-title", "layout-badge", "desk-visual", "monitor-screen", "display-description", "pointer-description", "port-legend", "port-list", "selection-name", "review-button", "apply-button", "apply-hint", "mode-badge", "mode-label", "connection-title", "connection-message", "hardware-indicator", "deskflow-indicator", "retry-button", "current-profile", "plan-panel", "plan-title", "plan-status", "plan-intro", "plan-steps", "plan-blockers", "blocker-list", "feedback"].map(id => [id, $(id)]));
+  const elements = Object.fromEntries(["profile-list", "profile-count", "profile-count-total", "profile-range", "preview-title", "layout-badge", "desk-visual", "monitor-screen", "display-description", "pointer-description", "port-legend", "port-list", "selection-name", "review-button", "apply-button", "apply-hint", "mode-badge", "mode-label", "connection-title", "connection-message", "hardware-indicator", "deskflow-indicator", "retry-button", "current-profile", "plan-panel", "plan-title", "plan-status", "plan-intro", "plan-steps", "plan-blockers", "blocker-list", "feedback"].map(id => [id, $(id)]));
 
   const make = (tag, className, text) => {
     const node = document.createElement(tag);
@@ -40,6 +42,12 @@
   }
 
   function selectedProfile() { return state.profiles.find(profile => profile.id === state.selectedId) || state.profiles[0]; }
+
+  function selectFragmentProfile() {
+    const fragment = new URLSearchParams(window.location.hash.slice(1));
+    const id = fragment.get("profile");
+    if (id && state.profiles.some(profile => profile.id === id)) selectProfile(id);
+  }
 
   function humanize(value) {
     return String(value || "").replace(/[_-]+/g, " ").replace(/^\w/, letter => letter.toUpperCase());
@@ -72,6 +80,10 @@
   }
 
   function renderProfiles() {
+    const count = String(state.profiles.length).padStart(2, "0");
+    elements["profile-count-total"].textContent = count;
+    elements["profile-count"].setAttribute("aria-label", `${state.profiles.length} complete desk profiles`);
+    elements["profile-range"].textContent = `01 — ${count}`;
     const legend = make("legend", "visually-hidden", "Desk profile");
     const children = [legend];
     for (const [index, profile] of state.profiles.entries()) {
@@ -84,7 +96,7 @@
       input.checked = profile.id === state.selectedId;
       input.addEventListener("change", () => selectProfile(profile.id));
       const card = make("span", "profile-card");
-      const device = profile.mode === "shared" ? "shared" : profile.focus;
+      const device = profile.mode === "focus" ? profile.focus : profile.mode;
       const icon = make("span", `profile-icon icon-${device}`);
       icon.append(glyph(device).firstElementChild);
       icon.setAttribute("aria-hidden", "true");
@@ -115,21 +127,22 @@
     const profile = selectedProfile();
     if (!profile) return;
     const shared = profile.mode === "shared";
+    const grid = profile.mode === "grid";
     const focus = devices[profile.focus] ? profile.focus : "main";
     elements["preview-title"].textContent = profile.name;
     elements["selection-name"].textContent = profile.name;
-    elements["layout-badge"].textContent = shared ? "Three views. One display." : `${devices[focus].name}, room to focus.`;
-    elements["monitor-screen"].className = `monitor-screen ${shared ? "shared-layout" : "focus-layout"}`;
-    const regions = shared ? ["main", "linux", "mac"] : [focus];
-    const positionNames = shared ? ["Left · full height", "Upper right", "Lower right"] : ["Full display"];
+    elements["layout-badge"].textContent = shared ? "Three views. One display." : grid ? "Four views. One display." : `${devices[focus].name}, room to focus.`;
+    elements["monitor-screen"].className = `monitor-screen ${shared ? "shared-layout" : grid ? "grid-layout" : "focus-layout"}`;
+    const regions = shared ? ["main", "linux", "mac"] : grid ? ["mac", "linux", "main", "windows"] : [focus];
+    const positionNames = shared ? ["Left · full height", "Upper right", "Lower right"] : grid ? ["Upper left", "Upper right", "Lower left", "Lower right"] : ["Full display"];
     elements["monitor-screen"].replaceChildren(...regions.map((device, index) => {
       const region = make("div", `screen-region device-${device} region-${device}`);
       region.append(glyph(device), make("span", "region-name", devices[device].name), make("span", "region-position", positionNames[index]));
       return region;
     }));
-    elements["display-description"].textContent = shared ? "Main left · Linux upper right · Mac lower right" : `${devices[focus].label} · full display`;
+    elements["display-description"].textContent = shared ? "Main left · Linux upper right · Mac lower right" : grid ? "Mac upper left · Linux upper right · Main lower left · Windows lower right" : `${devices[focus].label} · full display`;
     elements["pointer-description"].textContent = "Main laptop left · Windows laptop right";
-    elements["desk-visual"].setAttribute("aria-label", `${profile.name}: Main laptop at far left. ${shared ? "Dell display has Main on the left at full height, Linux at upper right, and Mac at lower right." : `Dell display shows ${devices[focus].label} fullscreen.`} Windows laptop at far right.`);
+    elements["desk-visual"].setAttribute("aria-label", `${profile.name}: Main laptop at far left. ${shared ? "Dell display has Main on the left at full height, Linux at upper right, and Mac at lower right." : grid ? "Dell display has a two-by-two grid with Mac at upper left, Linux at upper right, Main at lower left, and Windows at lower right." : `Dell display shows ${devices[focus].label} fullscreen.`} Windows laptop at far right.`);
   }
 
   function renderPortLegend() {
@@ -239,7 +252,7 @@
     if (profilesResult.status === "fulfilled") {
       state.setup = profilesResult.value.setup || null;
       const profiles = profilesResult.value.profiles;
-      if (Array.isArray(profiles) && profiles.length > 0 && profiles.every(profile => typeof profile.id === "string" && typeof profile.name === "string" && ["shared", "focus"].includes(profile.mode) && (profile.mode === "shared" || devices[profile.focus]))) {
+      if (Array.isArray(profiles) && profiles.length > 0 && profiles.every(profile => typeof profile.id === "string" && typeof profile.name === "string" && ["shared", "focus", "grid"].includes(profile.mode) && (profile.mode !== "focus" || devices[profile.focus]))) {
         const oldSelection = selectedProfile();
         state.profiles = profiles;
         state.selectedId = (profiles.find(profile => profile.id === state.selectedId) || profiles.find(profile => profile.mode === oldSelection.mode && profile.focus === oldSelection.focus) || profiles[0]).id;
@@ -251,6 +264,7 @@
     state.backendReady = validProfiles && statusResult.status === "fulfilled";
     state.loading = false;
     renderProfiles();
+    selectFragmentProfile();
     renderPreview();
     renderPortLegend();
     renderStatus();
@@ -300,6 +314,7 @@
   elements["review-button"].addEventListener("click", reviewProfile);
   elements["apply-button"].addEventListener("click", applyProfile);
   elements["retry-button"].addEventListener("click", initialize);
+  window.addEventListener("hashchange", selectFragmentProfile);
   renderProfiles();
   renderPreview();
   initialize();

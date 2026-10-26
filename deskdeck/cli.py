@@ -12,7 +12,7 @@ def main():
     web = sub.add_parser("serve", help="Open a loopback-only preview panel")
     web.add_argument("--port", type=int, default=8765)
     web.add_argument("--setup", metavar="FILE", help="Explicit local planned-wiring JSON (no hardware verification)")
-    sub.add_parser("profiles", help="List the five complete desired layouts")
+    sub.add_parser("profiles", help="List the complete desired layouts")
     plan = sub.add_parser("plan", help="Preview a complete profile restoration")
     plan.add_argument("profile_id", choices=[p["id"] for p in profiles()])
     plan.add_argument("--setup", metavar="FILE", help="Include local planned input assignments")

@@ -15,7 +15,8 @@ MAX_SETUP_BYTES = 16384
 def validate_setup(value):
     if not isinstance(value, dict):
         raise ValueError("Setup must be a JSON object")
-    allowed = {"schema_version", "source_inputs", "reserved_inputs", "keyboard_owner"}
+    allowed = {"schema_version", "source_inputs", "reserved_inputs", "keyboard_owner",
+               "input_attachment", "usb_upstreams"}
     if set(value) - allowed or type(value.get("schema_version")) is not int or value["schema_version"] != 1:
         raise ValueError("Unsupported setup fields or schema version")
     sources = value.get("source_inputs")
@@ -35,8 +36,21 @@ def validate_setup(value):
     owner = value.get("keyboard_owner")
     if owner is not None and (not isinstance(owner, str) or owner not in DEVICES):
         raise ValueError("Keyboard owner must be a known computer or null")
-    return copy.deepcopy({"schema_version": 1, "source_inputs": sources,
-                          "reserved_inputs": reserved, "keyboard_owner": owner})
+    result = {"schema_version": 1, "source_inputs": sources,
+              "reserved_inputs": reserved, "keyboard_owner": owner}
+    if "input_attachment" in value:
+        if value["input_attachment"] != "monitor":
+            raise ValueError("Coordinated input plans currently support monitor-attached input only")
+        result["input_attachment"] = value["input_attachment"]
+    if "usb_upstreams" in value:
+        usb = value["usb_upstreams"]
+        if not isinstance(usb, dict) or set(usb) != set(DEVICES):
+            raise ValueError("USB upstreams must specify every computer")
+        if any(not isinstance(p, str) or p not in {"Thunderbolt", "USB2", "USB3", "USB4"}
+               for p in usb.values()) or len(set(usb.values())) != len(DEVICES):
+            raise ValueError("USB upstream ports must be recognized and unique")
+        result["usb_upstreams"] = usb
+    return copy.deepcopy(result)
 
 
 def setup_summary(value):

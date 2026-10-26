@@ -18,7 +18,19 @@ def profiles():
                     "regions": {"left": "main", "top_right": "linux", "bottom_right": "mac"}},
         "left": "main", "right": "windows",
     }
-    result = [shared]
+    grid = {
+        "id": "shared-four", "name": "Four-way desk", "mode": "grid", "focus": None,
+        "description": "Mac and Linux above Main and Windows.",
+        "regions": [{"device": "mac", "position": "top_left"},
+                    {"device": "linux", "position": "top_right"},
+                    {"device": "main", "position": "bottom_left"},
+                    {"device": "windows", "position": "bottom_right"}],
+        "monitor": {"mode": "pbp4", "layout": "2x2",
+                    "regions": {"top_left": "mac", "top_right": "linux",
+                                "bottom_left": "main", "bottom_right": "windows"}},
+        "left": "main", "right": "windows",
+    }
+    result = [shared, grid]
     for device in ("main", "mac", "linux", "windows"):
         result.append({
             "id": "focus-" + device, "name": FOCUS_NAMES[device] + " focus",
@@ -75,12 +87,33 @@ def plan_profile(profile_id, setup=None):
         result["blockers"][0] = "Planned ports are recorded; actual monitor identity, input assignment and complete layout readback still need verification."
         if planned["keyboard_owner"] is None:
             result["blockers"].append("The computer that will serve the shared keyboard and mouse is not selected.")
+    shared_owner = setup.get("keyboard_owner") if setup else None
+    owner = profile["focus"] if profile["mode"] == "focus" else (shared_owner or "main")
+    result["input_handoff"] = {
+        "planned_server": owner,
+        "planned_clients": [d for d in DEVICES if d != owner],
+        "planned_usb_upstream": setup.get("usb_upstreams", {}).get(owner) if setup else None,
+        "usb_upstream_verified": False,
+        "deskflow_roles_verified": False,
+    }
+    result["steps"][4]["details"] = {
+        "server": owner, "clients": [d for d in DEVICES if d != owner],
+        "usb_upstream": result["input_handoff"]["planned_usb_upstream"],
+        "requirement": "Coordinate Dell USB ownership and one Deskflow role per computer; verify trust and reachability before handing input over.",
+    }
     return result
 
 
 def logical_routes(profile_id):
     """Draft computer-edge routing; physical monitor geometry still needs calibration."""
     p = get_profile(profile_id)
+    if p["mode"] == "grid":
+        return {
+            "mac": [("right", "linux"), ("down", "main")],
+            "linux": [("left", "mac"), ("down", "windows")],
+            "main": [("up", "mac"), ("right", "windows")],
+            "windows": [("up", "linux"), ("left", "main")],
+        }
     if p["mode"] == "shared":
         return {
             "main": [("right(0,50)", "linux"), ("right(50,100)", "mac")],

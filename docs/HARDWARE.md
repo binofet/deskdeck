@@ -1,10 +1,39 @@
 # Hardware support and qualification
 
-DeskDeck v0.1 is a local profile preview and an adapter foundation. The Dell
-U5226KW and its three-region PBP behavior have **not been tested by this project**.
+DeskDeck v0.1 is a local profile preview and an adapter foundation. Live
+qualification of a Dell U5226KW is in progress; integrated switching is unaccepted.
 A saved desired state is useful because a monitor may forget its PBP layout when
 PBP is disabled and enabled, but storing that state alone does not prove that it
 can be restored. No monitor utility is installed or discovered automatically.
+
+## Direct-control qualification
+
+The active qualification uses an independently reviewed, constrained DDC/CI
+helper, with stable monitor identity checks and strict reply validation. It does
+not install or run Dell software. The helper is separate from the public preview;
+the panel's Apply action remains disabled.
+
+Observed on 26 October 2026:
+
+- Strict reads of active input, E7, E8 pane assignments, and E9 PBP mode passed.
+- One same-value write of a captured E8 pane map passed unchanged four-register
+  readback. This alone does not qualify restoration.
+- A bounded four-way mode and primary-source sequence produced the intended
+  four corners, confirmed by the person at the monitor. Early post-transition
+  reads failed strict validation; a later bounded checkpoint succeeded.
+- The controlled return selected Thunderbolt primary before disabling PBP.
+  With five-second settling waits, all four register checks passed after both
+  steps. Fullscreen picture and physical input restoration were human-confirmed.
+- Physical USB input stayed on the upper-left computer. Automatic input-owner
+  control, role handoff, and per-profile Deskflow geometry remain unqualified.
+
+E7's current-value word alone did not distinguish the observed USB owners. A
+static protocol candidate is not a qualified write: exact-device capability
+evidence, complete reply decoding, and physical input confirmation are still
+required. No firmware patch or USB-control write has been performed.
+
+The DDPM documentation and adapter below are historical reference research,
+not the active installation or live-control path.
 
 ## Official documentation checked
 

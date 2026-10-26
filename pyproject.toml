@@ -10,8 +10,12 @@ requires-python = ">=3.12"
 license = "MIT"
 dependencies = []
 
+[project.optional-dependencies]
+tray = ["pystray==0.19.5", "Pillow==13.0.0"]
+
 [project.scripts]
 deskdeck = "deskdeck.cli:main"
+deskdeck-tray = "deskdeck.tray:main"
 
 [tool.setuptools.package-data]
 deskdeck = ["static/*"]

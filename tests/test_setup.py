@@ -29,7 +29,7 @@ class PlannedWiringTests(unittest.TestCase):
         self.assertEqual(plan_profile("shared", setup=PLANNED), shared)
 
     def test_reservation_does_not_create_an_active_source_or_profile(self):
-        self.assertEqual(len(profiles()), 5)
+        self.assertEqual(len(profiles()), 6)
         for p in profiles():
             plan = plan_profile(p["id"], setup=PLANNED)
             self.assertFalse(plan["ready"])
@@ -65,6 +65,32 @@ class PlannedWiringTests(unittest.TestCase):
         self.assertEqual(normalized["source_inputs"]["main"], "Thunderbolt")
         self.assertEqual(setup_summary(normalized)["evidence"], "user_plan")
         self.assertFalse(setup_summary(normalized)["hardware_verified"])
+
+    def test_quad_corner_order_and_usb_follow_focused_owner(self):
+        setup = copy.deepcopy(PLANNED)
+        setup["source_inputs"] = {"main": "Thunderbolt", "linux": "HDMI1", "mac": "HDMI2", "windows": "DP1"}
+        setup["keyboard_owner"] = "main"
+        setup["input_attachment"] = "monitor"
+        setup["usb_upstreams"] = {"main": "Thunderbolt", "windows": "USB2", "mac": "USB3", "linux": "USB4"}
+        validate_setup(setup)
+        quad = plan_profile("shared-four", setup=setup)
+        self.assertEqual(quad["steps"][1]["details"], {
+            "top_left": {"device": "mac", "port": "HDMI2"},
+            "top_right": {"device": "linux", "port": "HDMI1"},
+            "bottom_left": {"device": "main", "port": "Thunderbolt"},
+            "bottom_right": {"device": "windows", "port": "DP1"},
+        })
+        self.assertEqual(quad["input_handoff"]["planned_server"], "main")
+        focus = plan_profile("focus-windows", setup=setup)
+        self.assertEqual(focus["input_handoff"]["planned_server"], "windows")
+        self.assertEqual(focus["input_handoff"]["planned_usb_upstream"], "USB2")
+        self.assertFalse(focus["ready"])
+
+    def test_fixed_computer_receiver_cannot_plan_a_monitor_usb_handoff(self):
+        setup = copy.deepcopy(PLANNED)
+        setup.update(keyboard_owner="main", input_attachment="computer")
+        with self.assertRaisesRegex(ValueError, "monitor-attached"):
+            plan_profile("focus-mac", setup=setup)
 
     def test_explicit_file_load_and_invalid_content_limits(self):
         with tempfile.TemporaryDirectory() as directory:

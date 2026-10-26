@@ -70,7 +70,7 @@ class ServerBoundaryTests(unittest.TestCase):
                 "reserved_inputs": {"future": "DP2"},
             })
             data = self.request("GET", "/api/profiles")[1]
-            self.assertEqual(len(data["profiles"]), 5)
+            self.assertEqual(len(data["profiles"]), 6)
             self.assertEqual(data["setup"]["source_inputs"]["windows"], "HDMI1")
             self.assertFalse(data["setup"]["hardware_verified"])
             headers = {"Content-Type": "application/json", "X-DeskDeck-Token": self.server.session_token}

@@ -1,12 +1,12 @@
 # DeskDeck
 
-**Five desk modes. One place to remember them.**
+**Your desk modes. One place to remember them.**
 
-A small, dependency-free control-panel foundation for desks with a shared Dell
+A small local control-panel foundation for desks with a shared Dell
 monitor, several computers, and Deskflow. The first target is the Dell UltraSharp
 52-inch 6K U5226KW.
 
-> **0.1 is a working preview, not a hardware-control release.** You can explore five
+> **0.1 is a working preview, not a hardware-control release.** You can explore six
 > complete profiles, inspect their restoration plans, and export draft Deskflow
 > routes. It does **not** change your monitor, start Deskflow, flash firmware, or
 > claim that your hardware has been tested. See [hardware findings](docs/HARDWARE.md).
@@ -25,6 +25,7 @@ Both laptop screens stay at the outside edges:
 | Profile | Left laptop | Dell | Right laptop |
 | --- | --- | --- | --- |
 | Shared desk | Main | Main left; Linux upper right; Mac lower right | Windows |
+| Four-way desk | Main | Mac upper left; Linux upper right; Main lower left; Windows lower right | Windows |
 | Main laptop focus | Main | Main, full screen | Windows |
 | Mac focus | Main | Mac, full screen | Windows |
 | Linux focus | Main | Linux, full screen | Windows |
@@ -56,6 +57,24 @@ python -m unittest discover -s tests -v
 
 An installable entry point is also available with `python -m pip install .`.
 
+### Menu bar and system tray
+
+An optional launcher keeps DeskDeck in the macOS menu bar, Windows notification
+area, or a compatible Linux tray. The browser panel itself needs no third-party
+runtime packages. Install the extra in your own virtual environment:
+
+```sh
+python -m pip install '.[tray]'
+deskdeck-tray --setup .local/desk.json
+```
+
+The menu offers **Open DeskDeck**, six **Preview** profiles, and **Quit DeskDeck**.
+Selecting a preview does not apply it. Quit closes the launcher's own local
+server. `--no-open` starts just the tray; `--port 0` selects a free local port.
+No automatic startup is registered. Linux requires a menu-capable
+AppIndicator/Ayatana or GTK backend; GNOME may require an indicator extension.
+Native platform acceptance is separate from the mocked menu/lifecycle tests.
+
 To include planned wiring in the panel, copy `examples/desk-setup.json` to an
 ignored `.local/desk.json`, adjust the ports, and run:
 
@@ -66,16 +85,22 @@ python -m deskdeck serve --setup .local/desk.json
 The setup explicitly maps each computer to a physical input. Reserved inputs are
 shown separately and never create active profiles or routes. The example reserves
 DP2 for a future computer. A loaded file is a user plan, not connected-device or
-readback evidence; Apply stays disabled. `keyboard_owner` remains `null` until the
-computer serving the shared keyboard/mouse is selected. Files load only when
+readback evidence; Apply stays disabled. `keyboard_owner` selects the default
+server for Shared and Four-way modes; fullscreen plans select the focused computer.
+For a receiver attached to the monitor, `usb_upstreams` maps each computer's USB
+data cable separately from its video input. A coordinated role handoff and trusted
+client connections must be qualified before input control is enabled. Files load only when
 explicitly passed; invalid, duplicate or unknown assignments are rejected.
 
 ## What is implemented
 
-- A responsive local control panel with five selectable desk previews.
+- A responsive local control panel with six selectable desk previews.
 - A full-state profile planner: selecting a focus mode cannot overwrite Shared.
 - Draft Deskflow computer-edge configurations, with screen-name validation.
 - Optional local planned-wiring files, with a port legend and per-region plans.
+- An optional tray/menu-bar launcher with fixed local profile-preview links.
+- Pure Deskflow 1.27 role preparation and ordered operator acknowledgements;
+  this does not start a server or establish trusted peer connections.
 - An isolated Dell CLI adapter with explicit execution/write gates, documented
   read commands and refusal of unsupported or unverified restoration operations.
 - HTTP host/origin checks, session tokens, no external scripts, and no telemetry.
@@ -92,7 +117,10 @@ explicitly passed; invalid, duplicate or unknown assignments are rejected.
    computer. LAN access requires authentication and transport protection; the
    current preview intentionally has no remote-listening option.
 
-No guessed vendor VCP writes or undocumented firmware patching are included.
+The live-control path is being qualified through direct DDC/CI. DeskDeck does
+not require a Dell application installation. The historical DDPM adapter remains
+an isolated reference; the panel and tray never invoke it or install Dell software.
+No guessed vendor VCP writes or firmware flashing are included.
 Input selection alone is not proof that the whole split layout was restored.
 
 ## Local settings and privacy

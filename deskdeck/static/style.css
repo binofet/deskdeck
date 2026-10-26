@@ -93,6 +93,11 @@ h1 { margin-bottom: 11px; font-size: clamp(27px, 2.6vw, 36px); letter-spacing: -
 .shared-layout .region-main { grid-column: 1; grid-row: 1 / 3; }
 .shared-layout .region-linux { grid-column: 2; grid-row: 1; }
 .shared-layout .region-mac { grid-column: 2; grid-row: 2; }
+.grid-layout { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+.grid-layout .region-mac { grid-column: 1; grid-row: 1; }
+.grid-layout .region-linux { grid-column: 2; grid-row: 1; }
+.grid-layout .region-main { grid-column: 1; grid-row: 2; }
+.grid-layout .region-windows { grid-column: 2; grid-row: 2; }
 .focus-layout { grid-template-columns: 1fr; grid-template-rows: 1fr; }
 .screen-region { position: relative; display: flex; align-items: center; justify-content: center; gap: 7px; flex-direction: column; overflow: hidden; isolation: isolate; }
 .screen-region::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(135deg, #fff3, transparent 50%); opacity: .2; }
@@ -109,6 +114,10 @@ h1 { margin-bottom: 11px; font-size: clamp(27px, 2.6vw, 36px); letter-spacing: -
 .shared-layout .region-linux .device-glyph, .shared-layout .region-mac .device-glyph { width: 14px; height: 14px; }
 .shared-layout .region-linux .region-name, .shared-layout .region-mac .region-name { font-size: 8px; }
 .shared-layout .region-linux .region-position, .shared-layout .region-mac .region-position { display: none; }
+.grid-layout .screen-region { gap: 3px; }
+.grid-layout .device-glyph { width: 14px; height: 14px; }
+.grid-layout .region-name { font-size: 8px; }
+.grid-layout .region-position { font-size: 5px; }
 .focus-layout .device-glyph { width: 28px; height: 28px; }
 .focus-layout .region-name { font-size: 14px; }
 .focus-layout .region-position { font-size: 8px; }
@@ -265,7 +274,7 @@ h1 { margin-bottom: 11px; font-size: clamp(27px, 2.6vw, 36px); letter-spacing: -
   .profile-sidebar { width: 100%; }
   .section-heading { height: auto; margin-bottom: 12px; }
   .section-heading h2 { font-size: 11px; }
-  .profile-list { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 7px; }
+  .profile-list { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 7px; }
   .profile-card { padding: 11px 4px 10px; display: flex; flex-direction: column; min-height: 88px; gap: 8px; border-radius: 7px; text-align: center; }
   .profile-icon { width: 27px; height: 27px; border-radius: 6px; }
   .profile-icon svg { width: 15px; height: 15px; }
@@ -298,6 +307,10 @@ h1 { margin-bottom: 11px; font-size: clamp(27px, 2.6vw, 36px); letter-spacing: -
   .shared-layout .region-linux .device-glyph, .shared-layout .region-mac .device-glyph { width: 10px; height: 10px; }
   .shared-layout .region-linux .region-name, .shared-layout .region-mac .region-name { font-size: 6px; }
   .shared-layout .region-linux, .shared-layout .region-mac { gap: 1px; }
+  .grid-layout .screen-region { gap: 1px; }
+  .grid-layout .device-glyph { width: 10px; height: 10px; }
+  .grid-layout .region-name { font-size: 6px; }
+  .grid-layout .region-position { display: none; }
   .focus-layout .device-glyph { width: 23px; height: 23px; }
   .focus-layout .region-name { font-size: 10px; }
   .focus-layout .region-position { font-size: 6px; }
@@ -321,6 +334,10 @@ h1 { margin-bottom: 11px; font-size: clamp(27px, 2.6vw, 36px); letter-spacing: -
   .plan-panel { padding: 20px; }
   .plan-steps { grid-template-columns: 1fr; }
   .app-footer { padding-top: 24px; font-size: 6px; }
+}
+
+@media (max-width: 560px) {
+  .profile-list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 @media (max-width: 420px) {

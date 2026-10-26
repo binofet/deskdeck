@@ -2,12 +2,19 @@
   "schema_version": 1,
   "source_inputs": {
     "main": "Thunderbolt",
-    "linux": "DP1",
+    "linux": "HDMI1",
     "mac": "HDMI2",
-    "windows": "HDMI1"
+    "windows": "DP1"
   },
   "reserved_inputs": {
     "future": "DP2"
   },
-  "keyboard_owner": null
+  "keyboard_owner": "main",
+  "input_attachment": "monitor",
+  "usb_upstreams": {
+    "main": "Thunderbolt",
+    "windows": "USB2",
+    "mac": "USB3",
+    "linux": "USB4"
+  }
 }
