@@ -11,20 +11,29 @@ def main():
     sub = parser.add_subparsers(dest="command", required=True)
     web = sub.add_parser("serve", help="Open a loopback-only preview panel")
     web.add_argument("--port", type=int, default=8765)
+    web.add_argument("--setup", metavar="FILE", help="Explicit local planned-wiring JSON (no hardware verification)")
     sub.add_parser("profiles", help="List the five complete desired layouts")
     plan = sub.add_parser("plan", help="Preview a complete profile restoration")
     plan.add_argument("profile_id", choices=[p["id"] for p in profiles()])
+    plan.add_argument("--setup", metavar="FILE", help="Include local planned input assignments")
     export = sub.add_parser("deskflow-draft", help="Print logical routes for later physical calibration")
     export.add_argument("profile_id", choices=[p["id"] for p in profiles()])
     args = parser.parse_args()
+    setup = None
+    if getattr(args, "setup", None) is not None:
+        from .setup import load_setup
+        try:
+            setup = load_setup(args.setup)
+        except ValueError as exc:
+            parser.error(str(exc))
     if args.command == "serve":
         if not 0 <= args.port <= 65535:
             parser.error("Port must be between 0 and 65535")
         from .server import serve
-        serve(args.port)
+        serve(args.port, setup=setup)
     elif args.command == "profiles":
         print(json.dumps({"profiles": profiles()}, indent=2))
     elif args.command == "plan":
-        print(json.dumps(plan_profile(args.profile_id), indent=2))
+        print(json.dumps(plan_profile(args.profile_id, setup=setup), indent=2))
     elif args.command == "deskflow-draft":
         print(render_deskflow(args.profile_id), end="")

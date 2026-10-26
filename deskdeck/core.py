@@ -46,10 +46,10 @@ def status():
     }
 
 
-def plan_profile(profile_id):
+def plan_profile(profile_id, setup=None):
     profile = get_profile(profile_id)
     monitor = copy.deepcopy(profile["monitor"])
-    return {
+    result = {
         "profile": profile, "ready": False,
         "steps": [
             {"phase": "monitor", "action": "Restore the complete Dell layout", "details": monitor},
@@ -64,6 +64,18 @@ def plan_profile(profile_id):
             "Deskflow's multi-monitor edges and safe profile activation need calibration.",
         ],
     }
+    if setup is not None:
+        from .setup import setup_summary
+        planned = setup_summary(setup)
+        result["setup"] = planned
+        result["steps"][1]["details"] = {
+            region: {"device": device, "port": planned["source_inputs"][device]}
+            for region, device in monitor["regions"].items()
+        }
+        result["blockers"][0] = "Planned ports are recorded; actual monitor identity, input assignment and complete layout readback still need verification."
+        if planned["keyboard_owner"] is None:
+            result["blockers"].append("The computer that will serve the shared keyboard and mouse is not selected.")
+    return result
 
 
 def logical_routes(profile_id):

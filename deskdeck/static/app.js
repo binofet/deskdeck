@@ -22,8 +22,8 @@
   };
 
   const $ = id => document.getElementById(id);
-  const state = { profiles: fallbackProfiles, selectedId: "shared", status: null, token: null, backendReady: false, loading: true, reviewing: false, applying: false, plan: null };
-  const elements = Object.fromEntries(["profile-list", "preview-title", "layout-badge", "desk-visual", "monitor-screen", "display-description", "pointer-description", "selection-name", "review-button", "apply-button", "apply-hint", "mode-badge", "mode-label", "connection-title", "connection-message", "hardware-indicator", "deskflow-indicator", "retry-button", "current-profile", "plan-panel", "plan-title", "plan-status", "plan-intro", "plan-steps", "plan-blockers", "blocker-list", "feedback"].map(id => [id, $(id)]));
+  const state = { profiles: fallbackProfiles, selectedId: "shared", setup: null, status: null, token: null, backendReady: false, loading: true, reviewing: false, applying: false, plan: null };
+  const elements = Object.fromEntries(["profile-list", "preview-title", "layout-badge", "desk-visual", "monitor-screen", "display-description", "pointer-description", "port-legend", "port-list", "selection-name", "review-button", "apply-button", "apply-hint", "mode-badge", "mode-label", "connection-title", "connection-message", "hardware-indicator", "deskflow-indicator", "retry-button", "current-profile", "plan-panel", "plan-title", "plan-status", "plan-intro", "plan-steps", "plan-blockers", "blocker-list", "feedback"].map(id => [id, $(id)]));
 
   const make = (tag, className, text) => {
     const node = document.createElement(tag);
@@ -132,6 +132,27 @@
     elements["desk-visual"].setAttribute("aria-label", `${profile.name}: Main laptop at far left. ${shared ? "Dell display has Main on the left at full height, Linux at upper right, and Mac at lower right." : `Dell display shows ${devices[focus].label} fullscreen.`} Windows laptop at far right.`);
   }
 
+  function renderPortLegend() {
+    const setup = state.setup;
+    const entries = [];
+    const addPort = (name, port, device) => {
+      if (typeof port !== "string" || !port.trim()) return;
+      const entry = make("div", `port-entry${device ? ` port-${device}` : " port-reserved"}`);
+      entry.append(make("dt", "", name), make("dd", "", port));
+      entries.push(entry);
+    };
+    if (setup && typeof setup === "object" && !Array.isArray(setup)) {
+      for (const device of ["main", "linux", "mac", "windows"]) {
+        addPort(devices[device].label, setup.source_inputs?.[device], device);
+      }
+      if (setup.reserved_inputs && typeof setup.reserved_inputs === "object" && !Array.isArray(setup.reserved_inputs)) {
+        for (const port of Object.values(setup.reserved_inputs)) addPort("Reserved for future", port);
+      }
+    }
+    elements["port-list"].replaceChildren(...entries);
+    elements["port-legend"].hidden = entries.length === 0;
+  }
+
   function canApply() {
     return state.backendReady && state.token && state.status?.mode === "live" && state.status.hardware_ready === true && state.status.deskflow_ready === true && state.plan?.ready === true && state.plan.profile?.id === state.selectedId && !state.reviewing && !state.applying;
   }
@@ -208,12 +229,15 @@
     state.backendReady = false;
     state.plan = null;
     state.token = null;
+    state.setup = null;
     elements["plan-panel"].hidden = true;
     elements.feedback.hidden = true;
+    renderPortLegend();
     renderStatus();
     const [profilesResult, statusResult, sessionResult] = await Promise.allSettled([api("/api/profiles"), api("/api/status"), api("/api/session")]);
     let validProfiles = false;
     if (profilesResult.status === "fulfilled") {
+      state.setup = profilesResult.value.setup || null;
       const profiles = profilesResult.value.profiles;
       if (Array.isArray(profiles) && profiles.length > 0 && profiles.every(profile => typeof profile.id === "string" && typeof profile.name === "string" && ["shared", "focus"].includes(profile.mode) && (profile.mode === "shared" || devices[profile.focus]))) {
         const oldSelection = selectedProfile();
@@ -228,6 +252,7 @@
     state.loading = false;
     renderProfiles();
     renderPreview();
+    renderPortLegend();
     renderStatus();
     if (state.backendReady && !state.token) {
       elements["retry-button"].hidden = false;

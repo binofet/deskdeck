@@ -60,6 +60,28 @@ class ServerBoundaryTests(unittest.TestCase):
         self.assertFalse(data["ready"])
         self.assertIsNone(self.request("GET", "/api/status")[1]["current_profile"])
 
+    def test_planned_wiring_reaches_api_without_enabling_apply(self):
+        from deskdeck.setup import validate_setup
+        previous = self.server.setup
+        try:
+            self.server.setup = validate_setup({
+                "schema_version": 1,
+                "source_inputs": {"main": "Thunderbolt", "linux": "DP1", "mac": "HDMI2", "windows": "HDMI1"},
+                "reserved_inputs": {"future": "DP2"},
+            })
+            data = self.request("GET", "/api/profiles")[1]
+            self.assertEqual(len(data["profiles"]), 5)
+            self.assertEqual(data["setup"]["source_inputs"]["windows"], "HDMI1")
+            self.assertFalse(data["setup"]["hardware_verified"])
+            headers = {"Content-Type": "application/json", "X-DeskDeck-Token": self.server.session_token}
+            code, plan = self.request("POST", "/api/plan", '{"profile_id":"focus-windows"}', headers)
+            self.assertEqual(code, 200)
+            self.assertEqual(plan["steps"][1]["details"]["main"]["port"], "HDMI1")
+            self.assertFalse(plan["ready"])
+            self.assertEqual(self.request("POST", "/api/apply", '{"profile_id":"focus-windows"}', headers)[0], 409)
+        finally:
+            self.server.setup = previous
+
     def test_malformed_plan_does_not_escape_handler(self):
         headers = {"Content-Type": "application/json", "X-DeskDeck-Token": self.server.session_token}
         for bad in ["[]", "null", "{}", '{"profile_id":false}', '{"profile_id":"unknown"}', '{"profile_id":"shared","command":"evil"}']:

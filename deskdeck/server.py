@@ -8,6 +8,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from .core import get_profile, plan_profile, profiles, status
+from .setup import setup_summary, validate_setup
 
 STATIC = Path(__file__).parent / "static"
 STATIC_FILES = {"/": ("index.html", "text/html; charset=utf-8"),
@@ -19,10 +20,11 @@ STATIC_FILES = {"/": ("index.html", "text/html; charset=utf-8"),
 class PreviewServer(ThreadingHTTPServer):
     daemon_threads = True
 
-    def __init__(self, address):
+    def __init__(self, address, setup=None):
         if address[0] != "127.0.0.1":
             raise ValueError("This preview release binds only to 127.0.0.1")
         self.session_token = secrets.token_urlsafe(32)
+        self.setup = validate_setup(setup) if setup is not None else None
         super().__init__(address, Handler)
 
 
@@ -64,7 +66,10 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/session":
             return self._send(200, {"token": self.server.session_token})
         if path == "/api/profiles":
-            return self._send(200, {"profiles": profiles()})
+            data = {"profiles": profiles()}
+            if self.server.setup is not None:
+                data["setup"] = setup_summary(self.server.setup)
+            return self._send(200, data)
         if path == "/api/status":
             return self._send(200, status())
         if path in STATIC_FILES:
@@ -99,14 +104,14 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(400, {"error": "Invalid profile request"})
         path = urlsplit(self.path).path
         if path == "/api/plan":
-            return self._send(200, plan_profile(body["profile_id"]))
+            return self._send(200, plan_profile(body["profile_id"], setup=self.server.setup))
         if path == "/api/apply":
             return self._send(409, {"error": "Preview release: hardware and Deskflow activation are not connected", "ready": False})
         return self._send(404, {"error": "Not found"})
 
 
-def serve(port=8765):
-    server = PreviewServer(("127.0.0.1", port))
+def serve(port=8765, setup=None):
+    server = PreviewServer(("127.0.0.1", port), setup=setup)
     print(f"DeskDeck preview: http://127.0.0.1:{server.server_address[1]}", flush=True)
     print("Local preview only. No monitor, network KVM or Deskflow settings will change.", flush=True)
     try:

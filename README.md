@@ -49,17 +49,33 @@ loopback and does not install a service or change system settings.
 ```sh
 python -m deskdeck profiles
 python -m deskdeck plan shared
+python -m deskdeck plan shared --setup examples/desk-setup.json
 python -m deskdeck deskflow-draft focus-mac
 python -m unittest discover -s tests -v
 ```
 
 An installable entry point is also available with `python -m pip install .`.
 
+To include planned wiring in the panel, copy `examples/desk-setup.json` to an
+ignored `.local/desk.json`, adjust the ports, and run:
+
+```sh
+python -m deskdeck serve --setup .local/desk.json
+```
+
+The setup explicitly maps each computer to a physical input. Reserved inputs are
+shown separately and never create active profiles or routes. The example reserves
+DP2 for a future computer. A loaded file is a user plan, not connected-device or
+readback evidence; Apply stays disabled. `keyboard_owner` remains `null` until the
+computer serving the shared keyboard/mouse is selected. Files load only when
+explicitly passed; invalid, duplicate or unknown assignments are rejected.
+
 ## What is implemented
 
 - A responsive local control panel with five selectable desk previews.
 - A full-state profile planner: selecting a focus mode cannot overwrite Shared.
 - Draft Deskflow computer-edge configurations, with screen-name validation.
+- Optional local planned-wiring files, with a port legend and per-region plans.
 - An isolated Dell CLI adapter with explicit execution/write gates, documented
   read commands and refusal of unsupported or unverified restoration operations.
 - HTTP host/origin checks, session tokens, no external scripts, and no telemetry.
