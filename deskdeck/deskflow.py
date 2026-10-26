@@ -17,7 +17,7 @@ import re
 from typing import Iterable
 import unicodedata
 
-from .core import DEVICES, get_profile, logical_routes
+from .core import DEVICES, HOTKEY_ORDER, get_profile, logical_routes
 
 
 class ConfigurationError(ValueError):
@@ -286,7 +286,7 @@ def _topology(profile_id: str, bindings: dict[str, DeviceBinding]) -> str:
             target_name = names[target_device] + (("(" + suffix) if suffix else "")
             lines.append(f"        {edge} = {target_name}")
     lines.extend(["end", "", "section: options"])
-    for index, device in enumerate(DEVICES, 1):
+    for index, device in enumerate(HOTKEY_ORDER, 1):
         lines.append(f"    keystroke(Control+Alt+{index}) = switchToScreen({names[device]})")
     return "\n".join(lines + ["end", ""])
 

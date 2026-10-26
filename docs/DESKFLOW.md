@@ -126,11 +126,20 @@ computer-edge routes are unqualified until tested against each profile's actual
 OS display bounds. Host-switch hotkeys provide a simpler initial test path;
 never describe all physical seams as seamless merely because clients connected.
 
-For the generated `Control+Alt+number` shortcuts, press **Control+Command+number**
-on a Mac. Deskflow 1.27 maps its `Alt` modifier to the physical Command key on
-macOS; physical Option is its `Super` modifier. Use the server's physical keys
-when qualifying a shortcut, and isolate other input-sharing software during the
-test so it cannot obscure which connection delivered the input.
+Both draft generators use the same fixed shortcut numbers across profiles:
+
+| Target | Generic Ctrl+Alt shortcut | Physical Mac shortcut |
+| --- | --- | --- |
+| Main | Ctrl+Alt+1 | Ctrl+Command+1 |
+| Mac | Ctrl+Alt+2 | Ctrl+Command+2 |
+| Linux | Ctrl+Alt+3 | Ctrl+Command+3 |
+| Windows | Ctrl+Alt+4 | Ctrl+Command+4 |
+
+The generated syntax is `Control+Alt+number`. Deskflow 1.27 maps its `Alt`
+modifier to the physical Command key on macOS; physical Option is its `Super`
+modifier. Shortcut numbers stay fixed when the profile's server changes. Use the
+server's physical keys when qualifying a shortcut, and isolate other input-sharing
+software during the test so it cannot obscure which connection delivered the input.
 
 The live qualification should exercise Main → each fullscreen owner → Main and
 shared restoration, with keys/buttons released and harmless text-editor input.

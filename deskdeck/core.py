@@ -4,6 +4,7 @@ import copy
 import re
 
 DEVICES = ("main", "linux", "mac", "windows")
+HOTKEY_ORDER = ("main", "mac", "linux", "windows")
 FOCUS_NAMES = {"main": "Main laptop", "mac": "Mac", "linux": "Linux", "windows": "Windows"}
 
 
@@ -148,7 +149,7 @@ def render_deskflow(profile_id, names=None):
             target_name = names[target_device] + (("(" + suffix) if suffix else "")
             lines.append("        " + edge + " = " + target_name)
     lines.extend(["end", "", "section: options"])
-    for index, device in enumerate(DEVICES, 1):
+    for index, device in enumerate(HOTKEY_ORDER, 1):
         lines.append(f"    keystroke(Control+Alt+{index}) = switchToScreen({names[device]})")
     lines.extend(["end", ""])
     return "\n".join(lines)
