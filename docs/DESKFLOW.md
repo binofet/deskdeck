@@ -126,6 +126,12 @@ computer-edge routes are unqualified until tested against each profile's actual
 OS display bounds. Host-switch hotkeys provide a simpler initial test path;
 never describe all physical seams as seamless merely because clients connected.
 
+For the generated `Control+Alt+number` shortcuts, press **Control+Command+number**
+on a Mac. Deskflow 1.27 maps its `Alt` modifier to the physical Command key on
+macOS; physical Option is its `Super` modifier. Use the server's physical keys
+when qualifying a shortcut, and isolate other input-sharing software during the
+test so it cannot obscure which connection delivered the input.
+
 The live qualification should exercise Main → each fullscreen owner → Main and
 shared restoration, with keys/buttons released and harmless text-editor input.
 Observe Dell USB, exactly one server, authenticated client roster and human input
@@ -143,4 +149,5 @@ The source tests perform none of those hardware actions.
 - [Local core stop/status IPC](https://github.com/deskflow/deskflow/blob/v1.27.0/src/lib/deskflow/ipc/CoreIpcServer.cpp)
 - [TLS fingerprint verification](https://github.com/deskflow/deskflow/blob/v1.27.0/src/lib/net/SecureSocket.cpp)
 - [Mac enclosing display rectangle](https://github.com/deskflow/deskflow/blob/v1.27.0/src/lib/platform/OSXComputer.mm)
+- [Mac physical hotkey modifier mapping](https://github.com/deskflow/deskflow/blob/v1.27.0/src/lib/platform/OSXKeyState.cpp#L878)
 - [Windows virtual-desktop rectangle](https://github.com/deskflow/deskflow/blob/v1.27.0/src/lib/platform/MSWindowsComputer.cpp)
