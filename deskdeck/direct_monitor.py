@@ -208,6 +208,40 @@ def validate_receipt(raw: bytes, profile_id: str) -> dict:
         raise MonitorError("helper_receipt_invalid") from exc
 
 
+def failure_summary(raw: bytes, profile_id: str):
+    """Retain closed, numeric refusal facts only; never interpret them as success."""
+    if type(raw) is not bytes or len(raw) > MAX_OUTPUT or profile_id not in _TARGETS:
+        return None
+    try:
+        value = json.loads(raw.decode("utf-8"), object_pairs_hook=_unique_object)
+        if (type(value) is not dict or value.get("schema") != 1
+                or type(value.get("schema")) is not int
+                or value.get("source_candidate") is not True
+                or value.get("hardware_acceptance") is not False
+                or value.get("status") not in ("REFUSED_BEFORE_SET", "STOPPED_AFTER_SET_PARTIAL_OR_UNKNOWN")
+                or type(value.get("direction")) is not int
+                or value["direction"] != _TARGETS[profile_id][1]):
+            return None
+        bounds = {"stage": 10, "error": 7, "last_verified_state": 3, "last_read_mask": 15,
+                  "step_callbacks_entered": 2, "set_calls_entered": 2, "set_calls_returned": 2}
+        result = {"status": value["status"]}
+        for key, maximum in bounds.items():
+            item = value.get(key)
+            if type(item) is not int or not 0 <= item <= maximum:
+                return None
+            result[key] = item
+        for key in ("identity_verified", "capabilities_verified", "preflight_verified"):
+            if type(value.get(key)) is not bool:
+                return None
+            result[key] = value[key]
+        result["phase"] = ("arguments", "identity", "capabilities", "preflight", "first_write",
+                           "first_settle", "first_readback", "second_write", "second_settle",
+                           "second_readback", "complete")[result["stage"]]
+        return result
+    except (ValueError, UnicodeError, TypeError, RecursionError):
+        return None
+
+
 class DirectMonitor:
     def __init__(self, binding: DirectMonitorBinding, *, runner=None):
         if not isinstance(binding, DirectMonitorBinding) or (runner is not None and not callable(runner)):
@@ -236,6 +270,8 @@ class DirectMonitor:
                     or len(captured.stdout) > MAX_OUTPUT or len(captured.stderr) > MAX_OUTPUT):
                 raise MonitorError("helper_output_invalid")
             if captured.returncode != 0:
+                result["diagnostic"] = failure_summary(captured.stdout, profile_id)
+                result["helper_exit_code"] = captured.returncode
                 raise MonitorError("helper_nonzero_exit")
             receipt = validate_receipt(captured.stdout, profile_id)
             result.update(profile_id=profile_id, verified=True, state="verified_target_register_state", receipt=receipt)

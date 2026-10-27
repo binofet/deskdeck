@@ -32,6 +32,7 @@ class PreviewServer(ThreadingHTTPServer):
         self.apply_lock = threading.Lock()
         self.current_profile = None
         self.last_error = None
+        self.last_diagnostic = None
         self.transitioning = False
         self.session_token = secrets.token_urlsafe(32)
         self.setup = validate_setup(setup) if setup is not None else None
@@ -43,7 +44,7 @@ class PreviewServer(ThreadingHTTPServer):
         return {"mode": "direct-monitor", "hardware_ready": False, "deskflow_ready": False,
                 "apply_supported": ["focus-main", "shared-four"],
                 "current_profile": self.current_profile, "transitioning": self.transitioning,
-                "last_error": self.last_error, "physical_acceptance": False,
+                "last_error": self.last_error, "last_diagnostic": self.last_diagnostic, "physical_acceptance": False,
                 "message": "Two monitor layouts are connected to the pinned local helper. Existing Deskflow server and shortcuts stay unchanged; automatic edge routing is not applied."}
 
     def direct_plan(self, profile_id):
@@ -64,6 +65,7 @@ class PreviewServer(ThreadingHTTPServer):
             self.transitioning = True
             self.current_profile = None
             self.last_error = None
+            self.last_diagnostic = None
             try:
                 result = self.direct_monitor.apply(profile_id)
             except Exception:
@@ -72,8 +74,10 @@ class PreviewServer(ThreadingHTTPServer):
                 self.current_profile = profile_id
                 return 200, {**result, "message": "Target monitor registers verified. Check the visible layout and physical input; Deskflow settings were retained."}
             self.last_error = result.get("error") or "switch_unconfirmed"
+            self.last_diagnostic = result.get("diagnostic")
             return 409, {"error": self.last_error, "profile_id": None, "verified": False,
-                         "message": "Layout unknown. No retry or rollback was attempted. Recover using the monitor controls: PBP off, then Thunderbolt."}
+                         "diagnostic": self.last_diagnostic,
+                         "message": "Layout unknown. " + (f"Helper stopped in {self.last_diagnostic['phase']} (error {self.last_diagnostic['error']}, SET calls {self.last_diagnostic['set_calls_entered']}). " if self.last_diagnostic else "") + "No retry or rollback was attempted. Recover using the monitor controls: PBP off, then Thunderbolt."}
         finally:
             self.transitioning = False
             self.apply_lock.release()

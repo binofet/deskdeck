@@ -51,6 +51,23 @@ class DirectMonitorTests(unittest.TestCase):
         self.helper.chmod(0o700)
         self.binding = DirectMonitorBinding(str(self.helper), hashlib.sha256(self.helper.read_bytes()).hexdigest(), UUID)
 
+    def test_failure_retains_closed_diagnostics_without_claiming_success(self):
+        value = receipt()
+        value.update(status="REFUSED_BEFORE_SET", stage=2, error=4,
+                     capabilities_verified=False, preflight_verified=False,
+                     set_calls_entered=0, set_calls_returned=0, step_callbacks_entered=0)
+        runner = Mock(return_value=Captured(1, json.dumps(value).encode(), b"not exposed"))
+        result = DirectMonitor(self.binding, runner=runner).apply("focus-main")
+        self.assertFalse(result["verified"])
+        self.assertIsNone(result["profile_id"])
+        self.assertEqual(result["diagnostic"]["phase"], "capabilities")
+        self.assertEqual(result["diagnostic"]["set_calls_entered"], 0)
+        self.assertNotIn("stderr", result)
+        runner.assert_called_once()
+        value["stage"] = True
+        runner.return_value = Captured(1, json.dumps(value).encode(), b"")
+        self.assertIsNone(DirectMonitor(self.binding, runner=runner).apply("focus-main")["diagnostic"])
+
     def test_constructor_is_pure_and_private_binding_repr_does_not_leak(self):
         with patch("deskdeck.direct_monitor.os.open", side_effect=AssertionError("no reads")), \
                 patch("deskdeck.direct_monitor.subprocess.Popen", side_effect=AssertionError("no process")):
