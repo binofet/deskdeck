@@ -9,11 +9,13 @@ from urllib.parse import urlsplit
 
 from .core import get_profile, plan_profile, profiles, status
 from .setup import setup_summary, validate_setup
+from .desk_model import validate_desk_model, parse_desk_model, DeskModelError
 
 STATIC = Path(__file__).parent / "static"
 STATIC_FILES = {"/": ("index.html", "text/html; charset=utf-8"),
                 "/static/style.css": ("style.css", "text/css; charset=utf-8"),
                 "/static/app.js": ("app.js", "text/javascript; charset=utf-8"),
+                "/static/editor.js": ("editor.js", "text/javascript; charset=utf-8"),
                 "/static/icon.svg": ("icon.svg", "image/svg+xml")}
 
 
@@ -90,19 +92,29 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(415, {"error": "Use application/json"})
         if self.headers.get("Transfer-Encoding"):
             return self._send(400, {"error": "Transfer encoding is not supported"})
+        path = urlsplit(self.path).path
         try:
             length = int(self.headers.get("Content-Length", "0"))
-            if not 0 < length <= 4096:
+            limit = 262144 if path == "/api/desk-model" else 4096
+            if not 0 < length <= limit:
                 return self._send(413, {"error": "Invalid request size"})
             body = json.loads(self.rfile.read(length))
+            if path == "/api/desk-model":
+                if type(body) is not dict or set(body) not in ({"model"}, {"document"}):
+                    raise ValueError("Expected one desk model")
+                try:
+                    model = (parse_desk_model(body["document"]) if "document" in body
+                             else validate_desk_model(body["model"]))
+                except DeskModelError as error:
+                    return self._send(400, {"error": str(error)})
+                return self._send(200, {"model": model, "applied": False})
             if not isinstance(body, dict) or set(body) != {"profile_id"}:
                 raise ValueError("Expected profile_id only")
             if not isinstance(body["profile_id"], str):
                 raise ValueError("Invalid profile_id")
             get_profile(body["profile_id"])
-        except (ValueError, UnicodeError):
+        except (ValueError, UnicodeError, RecursionError):
             return self._send(400, {"error": "Invalid profile request"})
-        path = urlsplit(self.path).path
         if path == "/api/plan":
             return self._send(200, plan_profile(body["profile_id"], setup=self.server.setup))
         if path == "/api/apply":

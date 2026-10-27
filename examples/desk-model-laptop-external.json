@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "computers": [
+    {
+      "id": "laptop",
+      "name": "laptop",
+      "dell_input": "Thunderbolt",
+      "usb_upstream": "Thunderbolt",
+      "displays": [
+        {"id": "laptop-panel", "name": "built-in panel", "kind": "built-in", "anchor": "left", "placement": {"x": 0, "y": 0.4, "width": 0.2, "height": 0.4}},
+        {"id": "external-panel", "name": "external display", "kind": "external", "anchor": "dell", "placement": {"x": 0.25, "y": 0.1, "width": 0.75, "height": 0.8}}
+      ]
+    }
+  ],
+  "input_owner": "laptop"
+}

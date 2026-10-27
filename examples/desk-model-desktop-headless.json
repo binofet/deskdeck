@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "computers": [
+    {
+      "id": "desktop",
+      "name": "desktop",
+      "dell_input": "DP1",
+      "usb_upstream": "USB2",
+      "displays": [
+        {"id": "desktop-panel", "name": "external display", "kind": "external", "anchor": "dell", "placement": {"x": 0, "y": 0, "width": 1, "height": 1}}
+      ]
+    },
+    {"id": "compute", "name": "compute", "dell_input": null, "usb_upstream": null, "displays": []}
+  ],
+  "input_owner": "desktop"
+}

@@ -369,3 +369,30 @@ h1 { margin-bottom: 11px; font-size: clamp(27px, 2.6vw, 36px); letter-spacing: -
 }
 
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; scroll-behavior: auto !important; } }
+
+.setup-editor { margin-top: 28px; padding: 26px; border: 1px solid #3d4545; border-radius: 18px; background: #202626; }
+.setup-editor .section-heading { height: auto; align-items: center; margin-bottom: 18px; gap: 16px; }
+.setup-editor .section-heading h2 { font-size: 24px; line-height: 1.2; }
+.setup-editor .section-heading .eyebrow { margin-bottom: 9px; }
+.setup-editor > p { color: #b7c2bf; line-height: 1.6; max-width: 80ch; }
+.setup-editor .setup-help { font-size: 13px; }
+.computer-editor-card { display: flex; flex-wrap: wrap; gap: 16px; padding: 20px 0; border-top: 1px solid #3d4545; }
+.editor-field { display: flex; flex-direction: column; gap: 8px; font-size: 12px; color: #d5ddda; min-width: 160px; }
+.editor-field input, .editor-field select { padding: 10px; border: 1px solid #52605b; border-radius: 7px; color: #f4f6f3; background: #171d1c; font: inherit; }
+.editor-field input:focus-visible, .editor-field select:focus-visible { outline: 2px solid #b8ebbc; outline-offset: 2px; }
+.editor-screens { flex-basis: 100%; }
+.editor-display { display: flex; flex-wrap: wrap; align-items: end; gap: 14px; padding: 14px; margin-bottom: 10px; background: #171d1c; border-radius: 10px; }
+.editor-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px; }
+.editor-anchor-map { display: grid; grid-template-columns: 1fr 1.4fr 1fr; gap: 8px; margin: 22px 0; }
+.anchor-cell { padding: 12px; border: 1px dashed #52605b; border-radius: 10px; min-height: 62px; font-size: 12px; }
+.anchor-cell strong, .anchor-cell span { display: block; margin-bottom: 6px; overflow-wrap: anywhere; }
+.anchor-cell span { color: #c0ddbd; }
+.anchor-above { grid-column: 2; grid-row: 1; }
+.anchor-left { grid-column: 1; grid-row: 2; }
+.anchor-dell { grid-column: 2; grid-row: 2; border: 2px solid #a7c8a2; background: #293b31; }
+.anchor-right { grid-column: 3; grid-row: 2; }
+.anchor-below { grid-column: 2; grid-row: 3; }
+.anchor-unplaced { grid-column: 1 / -1; grid-row: 4; }
+.anchor-headless { grid-column: 1 / -1; margin: 0; font-size: 12px; color: #b7c2bf; overflow-wrap: anywhere; }
+#editor-status { font-size: 13px; color: #c0ddbd; }
+@media (max-width: 600px) { .setup-editor { padding: 18px; } .setup-editor .section-heading { flex-wrap: wrap; gap: 16px; } .editor-field { width: 100%; min-width: 0; } }

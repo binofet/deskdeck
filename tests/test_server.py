@@ -33,7 +33,8 @@ class ServerBoundaryTests(unittest.TestCase):
 
     def test_packaged_page_and_scripts_are_served(self):
         for path, mime in [("/", "text/html"), ("/static/style.css", "text/css"),
-                           ("/static/app.js", "text/javascript")]:
+                           ("/static/app.js", "text/javascript"),
+                           ("/static/editor.js", "text/javascript")]:
             c = http.client.HTTPConnection(*self.server.server_address, timeout=3)
             c.request("GET", path)
             response = c.getresponse()
@@ -86,6 +87,27 @@ class ServerBoundaryTests(unittest.TestCase):
         headers = {"Content-Type": "application/json", "X-DeskDeck-Token": self.server.session_token}
         for bad in ["[]", "null", "{}", '{"profile_id":false}', '{"profile_id":"unknown"}', '{"profile_id":"shared","command":"evil"}']:
             self.assertEqual(self.request("POST", "/api/plan", bad, headers)[0], 400)
+
+    def test_editor_validates_without_storing_or_applying(self):
+        model = {"schema_version": 1, "computers": [{"id": "server", "name": "headless server", "displays": []}], "input_owner": "server"}
+        headers = {"Content-Type": "application/json", "X-DeskDeck-Token": self.server.session_token}
+        code, result = self.request("POST", "/api/desk-model", json.dumps({"model": model}), headers)
+        self.assertEqual(code, 200)
+        self.assertFalse(result["applied"])
+        self.assertEqual(result["model"]["computers"][0]["displays"], [])
+        self.assertIsNone(self.request("GET", "/api/status")[1]["current_profile"])
+        self.assertEqual(self.request("POST", "/api/desk-model", json.dumps({"model": model}), {"Content-Type": "application/json"})[0], 403)
+
+    def test_editor_import_rejects_duplicate_keys_and_dangling_owner(self):
+        headers = {"Content-Type": "application/json", "X-DeskDeck-Token": self.server.session_token}
+        for payload in ({"document": '{"schema_version":1,"schema_version":1,"computers":[],"input_owner":null}'},
+                        {"model": {"schema_version": 1, "computers": [], "input_owner": "missing"}},
+                        {"document": []}, {"model": {}, "command": "apply"}):
+            self.assertEqual(self.request("POST", "/api/desk-model", json.dumps(payload), headers)[0], 400)
+
+    def test_editor_size_allowance_does_not_expand_profile_requests(self):
+        headers = {"Content-Type": "application/json", "X-DeskDeck-Token": self.server.session_token}
+        self.assertEqual(self.request("POST", "/api/plan", " " * 4097, headers)[0], 413)
 
 
 if __name__ == "__main__":

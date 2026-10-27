@@ -57,6 +57,18 @@ python -m unittest discover -s tests -v
 
 An installable entry point is also available with `python -m pip install .`.
 
+### Describe your computers
+
+The **Your computers & screens** editor adds and removes computers, describes
+built-in or external screens, and places their anchors around the Dell. Computers
+without a display remain in the setup without inventing a pointer edge. Keyboard
+ownership is chosen separately. See [computers and anchors](docs/COMPUTERS-AND-ANCHORS.md).
+
+Export and import validated editor setups to carry a draft between computers or
+app restarts. Unfinished edits remain recoverable at the same browser address.
+Editor exports do not replace the launcher's `--setup` wiring file, update the
+example profiles, or activate monitor/Deskflow changes in this preview.
+
 ### Menu bar and system tray
 
 An optional launcher keeps DeskDeck in the macOS menu bar, Windows notification

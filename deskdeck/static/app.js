@@ -193,7 +193,7 @@
     document.querySelectorAll('input[name="desk-profile"]').forEach(input => { input.disabled = state.applying; });
     let hint;
     if (state.loading) hint = "Connecting to the local DeskDeck service…";
-    else if (!online) hint = "Start the local service to review and apply profiles.";
+    else if (!online) hint = "Start the local service to review profile plans.";
     else if (!state.token) hint = "A local session is needed. Retry the connection to continue.";
     else if (preview) hint = "Preview mode · Your desk will stay as it is.";
     else if (!status.hardware_ready || !status.deskflow_ready) hint = "Connect display controls and Deskflow to enable Apply.";
