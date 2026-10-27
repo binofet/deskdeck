@@ -30,6 +30,7 @@ class DirectServerTests(unittest.TestCase):
         self.server.server_close()
 
     def test_construction_and_status_do_not_apply(self):
+        self.assertFalse(self.server.daemon_threads)
         self.assertEqual(self.monitor.calls, [])
         state = self.server.current_status()
         self.assertEqual(state["mode"], "direct-monitor")
@@ -85,3 +86,33 @@ class DirectServerTests(unittest.TestCase):
         finally:
             self.server.shutdown()
             worker.join(2)
+
+    def test_graceful_close_waits_for_direct_apply_handler(self):
+        self.monitor.release = threading.Event()
+        serving = threading.Thread(target=self.server.serve_forever, daemon=True)
+        serving.start()
+        errors = []
+        def apply_request():
+            try:
+                connection = http.client.HTTPConnection(*self.server.server_address, timeout=4)
+                connection.request("POST", "/api/apply", json.dumps({"profile_id": "focus-main"}),
+                                   {"Content-Type": "application/json", "X-DeskDeck-Token": self.server.session_token})
+                response = connection.getresponse()
+                response.read()
+                connection.close()
+            except Exception as error:
+                errors.append(error)
+        client = threading.Thread(target=apply_request)
+        client.start()
+        self.assertTrue(self.monitor.entered.wait(1))
+        self.server.shutdown()
+        closed = threading.Event()
+        closer = threading.Thread(target=lambda: (self.server.server_close(), closed.set()))
+        closer.start()
+        self.assertFalse(closed.wait(0.05))
+        self.monitor.release.set()
+        closer.join(2)
+        client.join(2)
+        serving.join(2)
+        self.assertTrue(closed.is_set())
+        self.assertEqual(errors, [])

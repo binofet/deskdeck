@@ -71,7 +71,7 @@
       const response = await fetch(path, { ...options, headers, credentials: "same-origin", cache: "no-store", signal: controller.signal });
       let result;
       try { result = await response.json(); } catch (_) { throw new Error("The local service returned an unreadable response."); }
-      if (!response.ok) throw new Error(readableDetails(result.error || result.message) || `The request could not be completed (${response.status}).`);
+      if (!response.ok) throw new Error([readableDetails(result.error), result.message].filter(Boolean).join(". ") || `The request could not be completed (${response.status}).`);
       return result;
     } catch (error) {
       if (error.name === "AbortError") throw new Error("The local service did not respond in time.");
@@ -310,7 +310,7 @@
     } catch (error) {
       state.plan = null;
       elements["plan-panel"].hidden = true;
-      showFeedback(`${error.message} The switch could not be confirmed. Review the desk before trying again.`, true);
+      showFeedback(`${error.message} Stop switching: the current layout is unconfirmed. Keep Darkmatter’s laptop keyboard available. Use the monitor controls to turn PBP off, then select Thunderbolt. Confirm the visible layout and physical keyboard/mouse before another switch. No automatic retry or rollback was attempted.`, true);
       try { state.status = await api("/api/status"); } catch (_) { state.backendReady = false; }
     } finally { state.applying = false; renderStatus(); }
   }

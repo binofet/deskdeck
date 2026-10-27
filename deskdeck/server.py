@@ -26,6 +26,8 @@ class PreviewServer(ThreadingHTTPServer):
     def __init__(self, address, setup=None, direct_monitor=None):
         if address[0] != "127.0.0.1":
             raise ValueError("This preview release binds only to 127.0.0.1")
+        # Direct-mode shutdown must join owned Apply through bounded cleanup.
+        self.daemon_threads = direct_monitor is None
         self.direct_monitor = direct_monitor
         self.apply_lock = threading.Lock()
         self.current_profile = None
