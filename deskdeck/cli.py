@@ -10,6 +10,7 @@ def main():
     parser.add_argument("--version", action="version", version=__version__)
     sub = parser.add_subparsers(dest="command", required=True)
     web = sub.add_parser("serve", help="Open a loopback-only preview panel")
+    web.add_argument("--direct-binding", metavar="FILE", help="Explicit private macOS monitor helper binding; enables two monitor transitions")
     web.add_argument("--port", type=int, default=8765)
     web.add_argument("--setup", metavar="FILE", help="Explicit local planned-wiring JSON (no hardware verification)")
     sub.add_parser("profiles", help="List the complete desired layouts")
@@ -30,7 +31,15 @@ def main():
         if not 0 <= args.port <= 65535:
             parser.error("Port must be between 0 and 65535")
         from .server import serve
-        serve(args.port, setup=setup)
+        direct_monitor = None
+        if args.direct_binding:
+            from .monitor_binding import load_binding
+            from .direct_monitor import DirectMonitor
+            try:
+                direct_monitor = DirectMonitor(load_binding(args.direct_binding))
+            except (ValueError, OSError):
+                parser.error("Private direct monitor binding refused")
+        serve(args.port, setup=setup, direct_monitor=direct_monitor)
     elif args.command == "profiles":
         print(json.dumps({"profiles": profiles()}, indent=2))
     elif args.command == "plan":

@@ -63,7 +63,7 @@
 
   async function api(path, options = {}) {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 12000);
+    const timeout = setTimeout(() => controller.abort(), path === "/api/apply" ? 72000 : 12000);
     try {
       const headers = { Accept: "application/json", ...options.headers };
       if (options.body) headers["Content-Type"] = "application/json";
@@ -167,14 +167,15 @@
   }
 
   function canApply() {
-    return state.backendReady && state.token && state.status?.mode === "live" && state.status.hardware_ready === true && state.status.deskflow_ready === true && state.plan?.ready === true && state.plan.profile?.id === state.selectedId && !state.reviewing && !state.applying;
+    return state.backendReady && state.token && (state.status?.mode === "direct-monitor" ? state.status.apply_supported?.includes(state.selectedId) && !state.status.transitioning : state.status?.mode === "live" && state.status.hardware_ready === true && state.status.deskflow_ready === true) && state.plan?.ready === true && state.plan.profile?.id === state.selectedId && !state.reviewing && !state.applying;
   }
 
   function renderStatus() {
     const status = state.status;
-    const preview = status?.mode !== "live";
+    const direct = status?.mode === "direct-monitor";
+    const preview = status?.mode !== "live" && !direct;
     const online = state.backendReady;
-    elements["mode-label"].textContent = state.loading ? "Connecting" : !online ? "Service offline" : preview ? "Preview mode" : "Live mode";
+    elements["mode-label"].textContent = state.loading ? "Connecting" : !online ? "Service offline" : preview ? "Preview mode" : direct ? "Monitor switching" : "Live mode";
     elements["mode-badge"].classList.toggle("is-offline", !state.loading && !online);
     elements["mode-badge"].classList.toggle("is-live", online && !preview);
     elements["connection-title"].textContent = state.loading ? "Connecting to your desk" : !online ? "Your desk is in preview" : preview ? "Explore your desk in preview" : status.hardware_ready && status.deskflow_ready ? "Your desk is connected" : "A little setup, then you're ready";
@@ -196,13 +197,14 @@
     else if (!online) hint = "Start the local service to review profile plans.";
     else if (!state.token) hint = "A local session is needed. Retry the connection to continue.";
     else if (preview) hint = "Preview mode · Your desk will stay as it is.";
+    else if (direct) hint = state.applying || status.transitioning ? "Switching monitor; wait for the result. Do not repeat Apply." : !state.plan ? "Review one of the two connected monitor layouts." : state.plan.ready ? "Apply changes the monitor layout. Existing Deskflow shortcuts stay unchanged." : "This layout has no connected transition.";
     else if (!status.hardware_ready || !status.deskflow_ready) hint = "Connect display controls and Deskflow to enable Apply.";
     else if (!state.plan) hint = "Review this profile to enable Apply.";
     else if (!state.plan.ready) hint = "Finish the setup shown in the profile plan to enable Apply.";
     else hint = "Ready to apply the complete desk profile.";
     elements["apply-hint"].textContent = hint;
     const current = state.profiles.find(profile => profile.id === status?.current_profile);
-    elements["current-profile"].textContent = current ? `Current profile: ${current.name}` : "No profile applied in this session";
+    elements["current-profile"].textContent = current ? `Last verified monitor layout: ${current.name}` : status?.transitioning ? "Monitor transition in progress" : "Current monitor layout unconfirmed";
   }
 
   function showFeedback(message, isError = false) {
@@ -215,10 +217,11 @@
     const plan = state.plan;
     if (!plan) return;
     const profile = selectedProfile();
-    const preview = state.status?.mode !== "live";
+    const direct = state.status?.mode === "direct-monitor";
+    const preview = state.status?.mode !== "live" && !direct;
     elements["plan-title"].textContent = `${profile.name} plan`;
     elements["plan-status"].textContent = preview ? "Preview only" : plan.ready ? "Ready to apply" : "Setup needed";
-    elements["plan-intro"].textContent = preview ? "Here's what this complete profile will change when your desk is connected. Reviewing this plan leaves your desk as it is." : "This plan covers the display layout and the pointer path. Apply when you're ready to switch the whole desk.";
+    elements["plan-intro"].textContent = direct ? `Only the monitor layout changes. Deskflow roles and shortcuts stay unchanged. ${plan.recovery || ""}` : preview ? "Here's what this complete profile will change when your desk is connected. Reviewing this plan leaves your desk as it is." : "This plan covers the display layout and the pointer path. Apply when you're ready to switch the whole desk.";
     const steps = Array.isArray(plan.steps) ? plan.steps : [];
     elements["plan-steps"].replaceChildren(...steps.map(step => {
       const item = make("li", "plan-step");
@@ -300,11 +303,13 @@
     try {
       const result = await api("/api/apply", { method: "POST", body: JSON.stringify({ profile_id: profileId }) });
       state.status = await api("/api/status");
-      if (state.status.current_profile === profileId) showFeedback(`${selectedProfile().name} is the current profile reported by DeskDeck.`);
+      if (state.status.current_profile === profileId) showFeedback(result.message || `${selectedProfile().name} registers verified.`);
       else showFeedback(result.message || "The apply request completed. The service has not confirmed the current profile; check your desk before continuing.");
       state.plan = null;
       elements["plan-panel"].hidden = true;
     } catch (error) {
+      state.plan = null;
+      elements["plan-panel"].hidden = true;
       showFeedback(`${error.message} The switch could not be confirmed. Review the desk before trying again.`, true);
       try { state.status = await api("/api/status"); } catch (_) { state.backendReady = false; }
     } finally { state.applying = false; renderStatus(); }

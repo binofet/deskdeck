@@ -3,6 +3,7 @@
 import hmac
 import json
 import secrets
+import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -22,12 +23,58 @@ STATIC_FILES = {"/": ("index.html", "text/html; charset=utf-8"),
 class PreviewServer(ThreadingHTTPServer):
     daemon_threads = True
 
-    def __init__(self, address, setup=None):
+    def __init__(self, address, setup=None, direct_monitor=None):
         if address[0] != "127.0.0.1":
             raise ValueError("This preview release binds only to 127.0.0.1")
+        self.direct_monitor = direct_monitor
+        self.apply_lock = threading.Lock()
+        self.current_profile = None
+        self.last_error = None
+        self.transitioning = False
         self.session_token = secrets.token_urlsafe(32)
         self.setup = validate_setup(setup) if setup is not None else None
         super().__init__(address, Handler)
+
+    def current_status(self):
+        if self.direct_monitor is None:
+            return status()
+        return {"mode": "direct-monitor", "hardware_ready": False, "deskflow_ready": False,
+                "apply_supported": ["focus-main", "shared-four"],
+                "current_profile": self.current_profile, "transitioning": self.transitioning,
+                "last_error": self.last_error, "physical_acceptance": False,
+                "message": "Two monitor layouts are connected to the pinned local helper. Existing Deskflow server and shortcuts stay unchanged; automatic edge routing is not applied."}
+
+    def direct_plan(self, profile_id):
+        supported = profile_id in ("focus-main", "shared-four")
+        return {"profile": get_profile(profile_id), "ready": supported and not self.transitioning,
+                "steps": [{"phase": "monitor", "action": "Verify monitor identity and exact starting registers"},
+                          {"phase": "monitor", "action": "Switch the two video settings once each and verify each resulting state"},
+                          {"phase": "input", "action": "Retain Darkmatter USB ownership and existing Deskflow shortcuts"}],
+                "blockers": [] if supported else ["This profile has no connected hardware transition yet."],
+                "recovery": "No automatic retry or rollback. On failure the current layout is unknown. Stop switching; use the monitor controls to turn PBP off and select Thunderbolt, keeping the laptop keyboard available."}
+
+    def apply_direct(self, profile_id):
+        if profile_id not in ("focus-main", "shared-four"):
+            return 409, {"error": "unsupported_profile", "ready": False}
+        if not self.apply_lock.acquire(blocking=False):
+            return 409, {"error": "apply_busy", "ready": False}
+        try:
+            self.transitioning = True
+            self.current_profile = None
+            self.last_error = None
+            try:
+                result = self.direct_monitor.apply(profile_id)
+            except Exception:
+                result = {"verified": False, "error": "helper_unavailable"}
+            if result.get("verified") is True and result.get("profile_id") == profile_id:
+                self.current_profile = profile_id
+                return 200, {**result, "message": "Target monitor registers verified. Check the visible layout and physical input; Deskflow settings were retained."}
+            self.last_error = result.get("error") or "switch_unconfirmed"
+            return 409, {"error": self.last_error, "profile_id": None, "verified": False,
+                         "message": "Layout unknown. No retry or rollback was attempted. Recover using the monitor controls: PBP off, then Thunderbolt."}
+        finally:
+            self.transitioning = False
+            self.apply_lock.release()
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -73,7 +120,7 @@ class Handler(BaseHTTPRequestHandler):
                 data["setup"] = setup_summary(self.server.setup)
             return self._send(200, data)
         if path == "/api/status":
-            return self._send(200, status())
+            return self._send(200, self.server.current_status())
         if path in STATIC_FILES:
             name, mime = STATIC_FILES[path]
             try:
@@ -116,16 +163,19 @@ class Handler(BaseHTTPRequestHandler):
         except (ValueError, UnicodeError, RecursionError):
             return self._send(400, {"error": "Invalid profile request"})
         if path == "/api/plan":
-            return self._send(200, plan_profile(body["profile_id"], setup=self.server.setup))
+            return self._send(200, self.server.direct_plan(body["profile_id"]) if self.server.direct_monitor is not None else plan_profile(body["profile_id"], setup=self.server.setup))
         if path == "/api/apply":
+            if self.server.direct_monitor is not None:
+                code, result = self.server.apply_direct(body["profile_id"])
+                return self._send(code, result)
             return self._send(409, {"error": "Preview release: hardware and Deskflow activation are not connected", "ready": False})
         return self._send(404, {"error": "Not found"})
 
 
-def serve(port=8765, setup=None):
-    server = PreviewServer(("127.0.0.1", port), setup=setup)
+def serve(port=8765, setup=None, direct_monitor=None):
+    server = PreviewServer(("127.0.0.1", port), setup=setup, direct_monitor=direct_monitor)
     print(f"DeskDeck preview: http://127.0.0.1:{server.server_address[1]}", flush=True)
-    print("Local preview only. No monitor, network KVM or Deskflow settings will change.", flush=True)
+    print("Explicit monitor Apply enabled; existing Deskflow settings retained." if direct_monitor is not None else "Local preview only. No monitor, network KVM or Deskflow settings will change.", flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
